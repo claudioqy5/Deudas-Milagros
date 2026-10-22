@@ -31,6 +31,9 @@ public class Product
     [BsonElement("imageUrl")]
     public string? ImageUrl { get; set; }
 
+    [BsonElement("packs")]
+    public List<ProductPack> Packs { get; set; } = new();
+
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
@@ -39,4 +42,23 @@ public class Product
 
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+[BsonIgnoreExtraElements]
+public class ProductPack
+{
+    [BsonElement("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty; // e.g. "Sixpack agua", "Caja x24", "Pack x3"
+
+    [BsonElement("unitsCount")]
+    public decimal UnitsCount { get; set; } = 1m; // how many base units are contained
+
+    [BsonElement("price")]
+    public decimal Price { get; set; } = 0m; // specific price for the pack
+
+    [BsonElement("imageUrl")]
+    public string? ImageUrl { get; set; } // custom photo for the pack
 }

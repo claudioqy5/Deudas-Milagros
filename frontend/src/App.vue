@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { Menu, Store, PlusCircle } from 'lucide-vue-next';
 import LoginView from './components/LoginView.vue';
 import Sidebar from './components/Sidebar.vue';
 import DashboardView from './components/DashboardView.vue';
@@ -20,6 +21,24 @@ import { api, authState } from './services/api';
 
 const currentUser = ref<LoginResponse | null>(null);
 const currentView = ref<'dashboard' | 'pos' | 'debts' | 'customers' | 'inventory' | 'users'>('dashboard');
+const isSidebarPinned = ref(localStorage.getItem('bodega_sidebar_pinned') === 'true');
+const isMobileSidebarOpen = ref(false);
+
+const getViewTitle = (view: string) => {
+  switch (view) {
+    case 'dashboard': return 'Dashboard';
+    case 'pos': return 'POS de Fiados';
+    case 'debts': return 'Deudas & Cobranzas';
+    case 'customers': return 'Lista de Clientes';
+    case 'inventory': return 'Inventario';
+    case 'users': return 'Usuarios & Personal';
+    default: return '';
+  }
+};
+
+const handleTogglePin = (pinned: boolean) => {
+  isSidebarPinned.value = pinned;
+};
 
 // Global Stats for badges
 const summary = ref<DashboardSummary | null>(null);
@@ -157,19 +176,47 @@ const handleProductSaved = async () => {
 
   <!-- Main System if authenticated -->
   <div v-else class="app-container">
+    <!-- Backdrop for tablet/mobile sidebar drawer -->
+    <div 
+      v-if="isMobileSidebarOpen" 
+      class="sidebar-backdrop" 
+      @click="isMobileSidebarOpen = false"
+    ></div>
+
     <!-- Sidebar Navigation -->
     <Sidebar 
       :current-view="currentView"
       :debtors-count="summary?.activeDebtorsCount || 0"
       :low-stock-count="summary?.lowStockProductsCount || 0"
       :current-user="currentUser"
+      :is-mobile-open="isMobileSidebarOpen"
       @navigate="handleNavigate"
       @quick-sale="handleQuickSale"
       @logout="onLogout"
+      @toggle-pin="handleTogglePin"
+      @close-mobile="isMobileSidebarOpen = false"
     />
 
     <!-- Main Content Area -->
-    <main class="main-wrapper">
+    <main class="main-wrapper" :class="{ 'sidebar-pinned': isSidebarPinned }">
+      <!-- Tablet/Mobile Top Navigation Bar -->
+      <header class="tablet-topbar">
+        <button class="tablet-menu-btn" title="Abrir Menú" @click="isMobileSidebarOpen = true">
+          <Menu :size="22" />
+        </button>
+        <div class="tablet-brand">
+          <div class="tablet-brand-icon">
+            <Store :size="16" />
+          </div>
+          <span class="tablet-brand-name">BodegaPOS</span>
+          <span class="tablet-view-tag">• {{ getViewTitle(currentView) }}</span>
+        </div>
+        <button class="btn btn-primary btn-sm tablet-quick-btn" @click="handleQuickSale">
+          <PlusCircle :size="15" />
+          <span>Vender</span>
+        </button>
+      </header>
+
       <DashboardView 
         v-if="currentView === 'dashboard'" 
         ref="dashboardRef"

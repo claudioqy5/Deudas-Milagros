@@ -13,8 +13,10 @@ public class CreateCreditSaleDto
 public class CreateSaleItemDto
 {
     public string ProductId { get; set; } = string.Empty;
+    public string? ProductName { get; set; }
     public decimal Quantity { get; set; } = 1m;
     public decimal UnitPrice { get; set; } = 0m;
+    public decimal UnitsDeducted { get; set; } = 0m;
 }
 
 public class CreatePaymentDto

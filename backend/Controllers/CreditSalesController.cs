@@ -82,10 +82,14 @@ public class CreditSalesController : ControllerBase
             var unitPrice = reqItem.UnitPrice > 0 ? reqItem.UnitPrice : product.SalePrice;
             var subtotal = Math.Round(reqItem.Quantity * unitPrice, 2);
 
+            var itemName = !string.IsNullOrWhiteSpace(reqItem.ProductName) 
+                ? reqItem.ProductName 
+                : product.Name;
+
             saleItems.Add(new SaleItem
             {
                 ProductId = product.Id!,
-                ProductName = product.Name,
+                ProductName = itemName,
                 Quantity = reqItem.Quantity,
                 UnitPrice = unitPrice,
                 Subtotal = subtotal
@@ -96,7 +100,8 @@ public class CreditSalesController : ControllerBase
             // Deduct stock only if product does NOT have infinite stock!
             if (!product.IsInfiniteStock)
             {
-                product.Stock -= reqItem.Quantity;
+                var deduction = reqItem.UnitsDeducted > 0 ? reqItem.UnitsDeducted : reqItem.Quantity;
+                product.Stock -= deduction;
                 product.UpdatedAt = DateTime.UtcNow;
                 await _db.Products.ReplaceOneAsync(p => p.Id == product.Id, product);
             }

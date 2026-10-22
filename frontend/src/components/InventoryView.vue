@@ -8,7 +8,8 @@ import {
   Trash2, 
   Plus, 
   Minus,
-  Infinity as InfinityIcon
+  Infinity as InfinityIcon,
+  Boxes
 } from 'lucide-vue-next';
 import type { Product } from '../services/api';
 import { api } from '../services/api';
@@ -162,9 +163,28 @@ const deleteProduct = async (product: Product) => {
           <tbody>
             <tr v-for="p in filtered" :key="p.id">
               <td>
-                <div style="font-weight: 700; color: var(--slate-900); font-size: 0.95rem;">{{ p.name }}</div>
-                <div style="font-size: 0.75rem; color: var(--slate-500);">
-                  Unidad: {{ p.unit }}
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div class="product-avatar">
+                    <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.name" class="product-avatar-img" />
+                    <div v-else class="product-avatar-placeholder">
+                      <Package :size="18" />
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; color: var(--slate-900); font-size: 0.95rem;">{{ p.name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--slate-500); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+                      <span>Unidad: {{ p.unit }}</span>
+                      <span v-if="p.packs && p.packs.length > 0" style="color: var(--slate-300);">•</span>
+                      <span 
+                        v-for="pk in p.packs" 
+                        :key="pk.id"
+                        style="font-size: 0.70rem; font-weight: 600; color: #4338ca; background: #e0e7ff; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;"
+                      >
+                        <Boxes :size="10" />
+                        {{ pk.name }}: S/. {{ pk.price.toFixed(2) }}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </td>
 

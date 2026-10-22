@@ -90,6 +90,7 @@ public class ProductsController : ControllerBase
         existing.IsInfiniteStock = update.IsInfiniteStock;
         existing.Unit = update.Unit;
         existing.ImageUrl = update.ImageUrl;
+        existing.Packs = update.Packs ?? new();
         existing.UpdatedAt = DateTime.UtcNow;
 
         await _db.Products.ReplaceOneAsync(p => p.Id == id, existing);

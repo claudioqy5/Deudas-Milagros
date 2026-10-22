@@ -33,6 +33,14 @@ export interface Customer {
   createdAt: string;
 }
 
+export interface ProductPack {
+  id: string;
+  name: string; // e.g. "Sixpack agua", "Caja x24"
+  unitsCount: number; // e.g. 6
+  price: number; // e.g. 10.00
+  imageUrl?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -42,6 +50,7 @@ export interface Product {
   isInfiniteStock: boolean;
   unit: string;
   imageUrl?: string;
+  packs?: ProductPack[];
   isActive: boolean;
 }
 
@@ -330,7 +339,13 @@ export const api = {
   // Credit Sales
   async createCreditSale(data: {
     customerId: string;
-    items: { productId: string; quantity: number; unitPrice?: number }[];
+    items: { 
+      productId: string; 
+      productName?: string;
+      quantity: number; 
+      unitPrice?: number;
+      unitsDeducted?: number;
+    }[];
     initialPayment?: number;
     notes?: string;
   }): Promise<CreditSale> {
