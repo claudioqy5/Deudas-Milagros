@@ -1,9 +1,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY ["BodegaDebts.Api/BodegaDebts.Api.csproj", "BodegaDebts.Api/"]
-RUN dotnet restore "BodegaDebts.Api/BodegaDebts.Api.csproj"
+COPY ["BodegaDebts.Api.csproj", "./"]
+RUN dotnet restore "BodegaDebts.Api.csproj"
 COPY . .
-WORKDIR "/src/BodegaDebts.Api"
 RUN dotnet build "BodegaDebts.Api.csproj" -c Release -o /app/build
 RUN dotnet publish "BodegaDebts.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 

@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace BodegaDebts.Api.Models;
 
+[BsonIgnoreExtraElements]
 public class Product
 {
     [BsonId]
