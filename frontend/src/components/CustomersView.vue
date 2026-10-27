@@ -4,9 +4,6 @@ import {
   Search, 
   UserPlus, 
   Phone, 
-  MessageSquare, 
-  Wallet, 
-  Receipt, 
   Edit3, 
   Trash2, 
   Users
@@ -207,38 +204,12 @@ const deleteCustomer = async (c: Customer) => {
               <td style="text-align: right;">
                 <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
                   <button 
-                    v-if="c.currentDebt > 0"
-                    class="btn btn-wsp btn-sm" 
-                    title="Mandar cobranza por WhatsApp"
-                    @click="handleWhatsAppClick(c)"
-                  >
-                    <MessageSquare :size="14" />
-                    <span>WSP</span>
-                  </button>
-
-                  <button 
-                    v-if="c.currentDebt > 0"
-                    class="btn btn-primary btn-sm" 
-                    title="Registrar abono"
-                    @click="emit('open-payment', c)"
-                  >
-                    <Wallet :size="14" />
-                  </button>
-
-                  <button 
-                    class="btn btn-secondary btn-sm" 
-                    title="Ver estado de cuenta completo"
-                    @click="handleStatementClick(c)"
-                  >
-                    <Receipt :size="14" />
-                  </button>
-
-                  <button 
                     class="btn btn-secondary btn-sm" 
                     title="Editar datos del cliente"
                     @click="emit('edit-customer', c)"
                   >
                     <Edit3 :size="14" />
+                    <span>Editar</span>
                   </button>
 
                   <button 

@@ -53,6 +53,13 @@ public class DashboardSummaryDto
     public List<MonthlyMetricDto> MonthlyTrend { get; set; } = new();
     public List<RecentActivityDto> RecentActivity { get; set; } = new();
     public StoreSettings Store { get; set; } = new();
+
+    // Filtros de periodo
+    public string Period { get; set; } = "all";
+    public string PeriodLabel { get; set; } = string.Empty;
+    public decimal GlobalPendingDebt { get; set; }
+    public int PeriodSalesCount { get; set; }
+    public int PeriodPaymentsCount { get; set; }
 }
 
 public class MonthlyMetricDto

@@ -34,6 +34,12 @@ public class Product
     [BsonElement("packs")]
     public List<ProductPack> Packs { get; set; } = new();
 
+    [BsonElement("isCombo")]
+    public bool IsCombo { get; set; } = false;
+
+    [BsonElement("comboItems")]
+    public List<ComboItem> ComboItems { get; set; } = new();
+
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
@@ -42,6 +48,22 @@ public class Product
 
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+[BsonIgnoreExtraElements]
+public class ComboItem
+{
+    [BsonElement("productId")]
+    public string ProductId { get; set; } = string.Empty;
+
+    [BsonElement("productName")]
+    public string ProductName { get; set; } = string.Empty;
+
+    [BsonElement("quantity")]
+    public decimal Quantity { get; set; } = 1m;
+
+    [BsonElement("unitPrice")]
+    public decimal UnitPrice { get; set; } = 0m;
 }
 
 [BsonIgnoreExtraElements]

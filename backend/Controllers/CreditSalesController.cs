@@ -97,8 +97,22 @@ public class CreditSalesController : ControllerBase
 
             totalAmount += subtotal;
 
-            // Deduct stock only if product does NOT have infinite stock!
-            if (!product.IsInfiniteStock)
+            // Deduct stock
+            if (product.IsCombo && product.ComboItems != null && product.ComboItems.Count > 0)
+            {
+                foreach (var cItem in product.ComboItems)
+                {
+                    var compProduct = await _db.Products.Find(p => p.Id == cItem.ProductId).FirstOrDefaultAsync();
+                    if (compProduct != null && !compProduct.IsInfiniteStock)
+                    {
+                        var deduction = reqItem.Quantity * cItem.Quantity;
+                        compProduct.Stock -= deduction;
+                        compProduct.UpdatedAt = DateTime.UtcNow;
+                        await _db.Products.ReplaceOneAsync(p => p.Id == compProduct.Id, compProduct);
+                    }
+                }
+            }
+            else if (!product.IsInfiniteStock)
             {
                 var deduction = reqItem.UnitsDeducted > 0 ? reqItem.UnitsDeducted : reqItem.Quantity;
                 product.Stock -= deduction;

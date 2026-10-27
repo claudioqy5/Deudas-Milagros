@@ -37,6 +37,7 @@ const emit = defineEmits<{
 
 const isHovered = ref(false);
 const isPinned = ref(localStorage.getItem('bodega_sidebar_pinned') === 'true');
+const isForceCollapsed = ref(false);
 
 const togglePin = () => {
   sounds.playClick();
@@ -50,14 +51,34 @@ emit('toggle-pin', isPinned.value);
 
 const handleNav = (view: string) => {
   sounds.playClick();
+  isForceCollapsed.value = true;
+  isHovered.value = false;
+  isPinned.value = false;
+  localStorage.setItem('bodega_sidebar_pinned', 'false');
+  emit('toggle-pin', false);
   emit('navigate', view);
   emit('close-mobile');
 };
 
 const handleQuickSale = () => {
   sounds.playClick();
+  isForceCollapsed.value = true;
+  isHovered.value = false;
+  isPinned.value = false;
+  localStorage.setItem('bodega_sidebar_pinned', 'false');
+  emit('toggle-pin', false);
   emit('quick-sale');
   emit('close-mobile');
+};
+
+const onMouseEnter = () => {
+  isForceCollapsed.value = false;
+  isHovered.value = true;
+};
+
+const onMouseLeave = () => {
+  isHovered.value = false;
+  isForceCollapsed.value = false;
 };
 
 const handleLogout = () => {
@@ -72,10 +93,11 @@ const handleLogout = () => {
     :class="{ 
       'is-pinned': isPinned, 
       'is-hovered': isHovered,
+      'is-force-collapsed': isForceCollapsed,
       'is-mobile-open': isMobileOpen
     }"
-    @mouseenter="isHovered = true"
-    @mouseleave="isHovered = false"
+    @mouseenter="onMouseEnter"
+    @mouseleave="onMouseLeave"
   >
     <!-- Brand Header -->
     <div class="brand-section">

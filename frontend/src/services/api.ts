@@ -41,6 +41,13 @@ export interface ProductPack {
   imageUrl?: string;
 }
 
+export interface ComboItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -51,6 +58,8 @@ export interface Product {
   unit: string;
   imageUrl?: string;
   packs?: ProductPack[];
+  isCombo?: boolean;
+  comboItems?: ComboItem[];
   isActive: boolean;
 }
 
@@ -124,6 +133,11 @@ export interface DashboardSummary {
   monthlyTrend: MonthlyMetric[];
   recentActivity: RecentActivity[];
   store: StoreSettings;
+  period?: string;
+  periodLabel?: string;
+  globalPendingDebt?: number;
+  periodSalesCount?: number;
+  periodPaymentsCount?: number;
 }
 
 export interface CustomerStatement {
@@ -137,7 +151,7 @@ export interface CustomerStatement {
   whatsAppUrl: string;
 }
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Auth State Helper
 const USER_KEY = 'bodega_auth_user';
@@ -227,8 +241,19 @@ export const api = {
   },
 
   // Dashboard
-  async getDashboardSummary(): Promise<DashboardSummary> {
-    const res = await fetch(`${API_BASE}/dashboard/summary`);
+  async getDashboardSummary(params?: {
+    period?: 'day' | 'week' | 'month' | 'year' | 'all';
+    date?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<DashboardSummary> {
+    const query = new URLSearchParams();
+    if (params?.period) query.append('period', params.period);
+    if (params?.date) query.append('date', params.date);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetch(`${API_BASE}/dashboard/summary${qs}`);
     if (!res.ok) throw new Error('Error al cargar métricas del dashboard');
     return res.json();
   },

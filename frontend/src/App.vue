@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { Menu, Store, PlusCircle } from 'lucide-vue-next';
+import { Menu, Store, PlusCircle, ShoppingCart } from 'lucide-vue-next';
 import LoginView from './components/LoginView.vue';
 import Sidebar from './components/Sidebar.vue';
 import DashboardView from './components/DashboardView.vue';
@@ -107,9 +107,11 @@ const handleNavigate = (view: string) => {
   // Protect users section from workers
   if (view === 'users' && currentUser.value?.role !== 'Admin') {
     currentView.value = 'dashboard';
+    isMobileSidebarOpen.value = false;
     return;
   }
   currentView.value = view as any;
+  isMobileSidebarOpen.value = false;
 };
 
 const refreshAll = async () => {
@@ -159,6 +161,31 @@ const handleEditProduct = (p: Product) => {
 
 const handleQuickSale = () => {
   currentView.value = 'pos';
+  isMobileSidebarOpen.value = false;
+};
+
+// POS Shopping Cart State for Topbar Badge Notice
+const posCartCount = ref(0);
+const posCartTotal = ref(0);
+const posCartBump = ref(false);
+
+const handlePosCartUpdate = (data: { count: number; total: number }) => {
+  posCartCount.value = data.count;
+  posCartTotal.value = data.total;
+  posCartBump.value = true;
+  setTimeout(() => {
+    posCartBump.value = false;
+  }, 450);
+};
+
+const handleTopCartClick = () => {
+  if (currentView.value === 'pos') {
+    if (posRef.value?.openCart) {
+      posRef.value.openCart();
+    }
+  } else {
+    handleQuickSale();
+  }
 };
 
 const handleCustomerSaved = async () => {
@@ -211,7 +238,26 @@ const handleProductSaved = async () => {
           <span class="tablet-brand-name">BodegaPOS</span>
           <span class="tablet-view-tag">• {{ getViewTitle(currentView) }}</span>
         </div>
-        <button class="btn btn-primary btn-sm tablet-quick-btn" @click="handleQuickSale">
+        <!-- If in POS, show interactive shopping cart button with live count & total -->
+        <button 
+          v-if="currentView === 'pos'"
+          class="btn btn-primary btn-sm tablet-quick-btn pos-topbar-cart-btn"
+          :class="{ 'has-items': posCartCount > 0, 'cart-bump': posCartBump }"
+          title="Ver detalle del fiado y cliente"
+          @click="handleTopCartClick"
+        >
+          <div class="cart-icon-wrapper">
+            <ShoppingCart :size="16" />
+            <span v-if="posCartCount > 0" class="topbar-cart-badge">{{ posCartCount }}</span>
+          </div>
+          <span class="cart-label">Carrito</span>
+          <span v-if="posCartCount > 0" class="topbar-cart-total">• S/. {{ posCartTotal.toFixed(2) }}</span>
+        </button>
+        <button 
+          v-else
+          class="btn btn-primary btn-sm tablet-quick-btn" 
+          @click="handleQuickSale"
+        >
           <PlusCircle :size="15" />
           <span>Vender</span>
         </button>
@@ -232,6 +278,7 @@ const handleProductSaved = async () => {
         @new-customer-request="handleNewCustomer"
         @sale-completed="refreshAll"
         @open-whatsapp="handleWhatsAppOpen"
+        @cart-updated="handlePosCartUpdate"
       />
 
       <DebtsView 

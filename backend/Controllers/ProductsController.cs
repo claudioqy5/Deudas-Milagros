@@ -91,6 +91,8 @@ public class ProductsController : ControllerBase
         existing.Unit = update.Unit;
         existing.ImageUrl = update.ImageUrl;
         existing.Packs = update.Packs ?? new();
+        existing.IsCombo = update.IsCombo;
+        existing.ComboItems = update.ComboItems ?? new();
         existing.UpdatedAt = DateTime.UtcNow;
 
         await _db.Products.ReplaceOneAsync(p => p.Id == id, existing);

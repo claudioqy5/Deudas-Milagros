@@ -9,7 +9,8 @@ import {
   Plus, 
   Minus,
   Infinity as InfinityIcon,
-  Boxes
+  Boxes,
+  Link2
 } from 'lucide-vue-next';
 import type { Product } from '../services/api';
 import { api } from '../services/api';
@@ -171,8 +172,23 @@ const deleteProduct = async (product: Product) => {
                     </div>
                   </div>
                   <div>
-                    <div style="font-weight: 700; color: var(--slate-900); font-size: 0.95rem;">{{ p.name }}</div>
-                    <div style="font-size: 0.75rem; color: var(--slate-500); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-weight: 700; color: var(--slate-900); font-size: 0.95rem;">{{ p.name }}</span>
+                      <span 
+                        v-if="p.isCombo"
+                        style="font-size: 0.70rem; font-weight: 700; color: #5b21b6; background: #ede9fe; padding: 2px 7px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;"
+                      >
+                        <Link2 :size="11" />
+                        Pack Fusionado
+                      </span>
+                    </div>
+
+                    <!-- Combo components summary -->
+                    <div v-if="p.isCombo && p.comboItems && p.comboItems.length > 0" style="font-size: 0.75rem; color: #4338ca; background: #f5f3ff; padding: 3px 6px; border-radius: 4px; margin-top: 3px; display: inline-block;">
+                      <strong style="color: #6b21a8;">Incluye:</strong> {{ p.comboItems.map(c => (c.quantity > 1 ? `${c.quantity}x ` : '') + c.productName).join(' + ') }}
+                    </div>
+
+                    <div v-else style="font-size: 0.75rem; color: var(--slate-500); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
                       <span>Unidad: {{ p.unit }}</span>
                       <span v-if="p.packs && p.packs.length > 0" style="color: var(--slate-300);">•</span>
                       <span 
@@ -194,14 +210,32 @@ const deleteProduct = async (product: Product) => {
                 </span>
               </td>
 
-              <td style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 800; color: var(--emerald-600);">
-                S/. {{ p.salePrice.toFixed(2) }}
+              <td>
+                <div style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 800; color: var(--slate-900);">
+                  S/. {{ p.salePrice.toFixed(2) }}
+                </div>
+                <div 
+                  v-if="p.isCombo && p.comboItems && p.comboItems.length > 0"
+                  style="font-size: 0.72rem; color: #94a3b8; text-decoration: line-through; font-weight: 600;"
+                >
+                  S/. {{ p.comboItems.reduce((acc, c) => acc + (c.quantity * c.unitPrice), 0).toFixed(2) }} sep.
+                </div>
               </td>
 
               <td>
+                <!-- Combo stock badge -->
+                <span 
+                  v-if="p.isCombo"
+                  class="badge"
+                  style="font-size: 0.76rem; padding: 4px 10px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;"
+                >
+                  <Link2 :size="13" />
+                  Auto (Componentes)
+                </span>
+
                 <!-- Infinite stock badge -->
                 <span 
-                  v-if="p.isInfiniteStock" 
+                  v-else-if="p.isInfiniteStock" 
                   class="badge badge-infinite"
                   style="font-size: 0.78rem; padding: 4px 10px;"
                 >
