@@ -262,13 +262,17 @@ const chartData = computed(() => {
       {
         label: 'Total Fiado (S/.)',
         backgroundColor: '#f43f5e',
-        borderRadius: 4,
+        borderRadius: 3,
+        barPercentage: 0.8,
+        categoryPercentage: 0.8,
         data: trend.map(t => t.totalFiado),
       },
       {
         label: 'Total Cobrado (S/.)',
         backgroundColor: '#059669',
-        borderRadius: 4,
+        borderRadius: 3,
+        barPercentage: 0.8,
+        categoryPercentage: 0.8,
         data: trend.map(t => t.totalCobrado),
       }
     ]
@@ -295,15 +299,25 @@ const rankingTitle = computed(() => {
   }
 });
 
-const chartOptions = {
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
+  layout: {
+    padding: {
+      left: 0,
+      right: 4,
+      top: 0,
+      bottom: 0
+    }
+  },
   plugins: {
     legend: {
       position: 'top' as const,
       labels: {
         color: '#475569',
-        font: { family: 'Plus Jakarta Sans', size: 12, weight: 600 }
+        boxWidth: 12,
+        padding: 8,
+        font: { family: 'Plus Jakarta Sans', size: 11, weight: 600 }
       }
     },
     tooltip: {
@@ -312,20 +326,29 @@ const chartOptions = {
       bodyColor: '#f1f5f9',
       borderColor: '#e2e8f0',
       borderWidth: 1,
-      padding: 10
+      padding: 8
     }
   },
   scales: {
     x: {
-      grid: { color: '#f1f5f9' },
-      ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 11 } }
+      grid: { display: false },
+      ticks: { 
+        color: '#64748b', 
+        font: { family: 'Plus Jakarta Sans', size: selectedPeriod.value === 'day' ? 10 : 11 },
+        maxRotation: 0,
+        autoSkip: false
+      }
     },
     y: {
       grid: { color: '#f1f5f9' },
-      ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 11 } }
+      ticks: { 
+        color: '#64748b', 
+        font: { family: 'Plus Jakarta Sans', size: 10.5 },
+        maxTicksLimit: 6
+      }
     }
   }
-};
+}));
 
 const handleWspQuick = async (customer: Customer) => {
   sounds.playClick();

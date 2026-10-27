@@ -93,28 +93,35 @@ public class DashboardController : ControllerBase
         {
             case "day":
                 periodLabel = refDate.ToString("dd 'de' MMMM, yyyy", esCulture);
-                var daySlots = new (string Label, int StartHour, int EndHour)[]
+                for (int h = 7; h <= 22; h++)
                 {
-                    ("00:00 - 06:00", 0, 6),
-                    ("06:00 - 09:00", 6, 9),
-                    ("09:00 - 12:00", 9, 12),
-                    ("12:00 - 15:00", 12, 15),
-                    ("15:00 - 18:00", 15, 18),
-                    ("18:00 - 21:00", 18, 21),
-                    ("21:00 - 24:00", 21, 24)
-                };
+                    var sTime = startUtc.AddHours(h);
+                    var eTime = startUtc.AddHours(h + 1);
 
-                foreach (var slot in daySlots)
-                {
-                    var sTime = startUtc.AddHours(slot.StartHour);
-                    var eTime = startUtc.AddHours(slot.EndHour);
+                    // For the 7am slot, include any prior morning transactions before 8am;
+                    // for the 10pm slot, include any late transactions after 10pm.
+                    var slotSales = h == 7
+                        ? allSales.Where(s => s.Date < eTime).ToList()
+                        : h == 22
+                            ? allSales.Where(s => s.Date >= sTime).ToList()
+                            : allSales.Where(s => s.Date >= sTime && s.Date < eTime).ToList();
 
-                    var slotSales = allSales.Where(s => s.Date >= sTime && s.Date < eTime).ToList();
-                    var slotPayments = allPayments.Where(p => p.Date >= sTime && p.Date < eTime).ToList();
+                    var slotPayments = h == 7
+                        ? allPayments.Where(p => p.Date < eTime).ToList()
+                        : h == 22
+                            ? allPayments.Where(p => p.Date >= sTime).ToList()
+                            : allPayments.Where(p => p.Date >= sTime && p.Date < eTime).ToList();
+
+                    string hourLabel = h switch
+                    {
+                        12 => "12 pm",
+                        > 12 => $"{h - 12} pm",
+                        _ => $"{h} am"
+                    };
 
                     trendMetrics.Add(new MonthlyMetricDto
                     {
-                        Month = slot.Label,
+                        Month = hourLabel,
                         TotalFiado = slotSales.Sum(s => s.TotalAmount),
                         TotalCobrado = slotPayments.Sum(p => p.Amount) + slotSales.Sum(s => s.InitialPayment)
                     });

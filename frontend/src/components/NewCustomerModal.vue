@@ -160,29 +160,16 @@ const saveCustomer = async () => {
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Dirección / Referencia:</label>
-            <div style="position: relative;">
-              <MapPin :size="16" style="position: absolute; left: 14px; top: 12px; color: var(--slate-400);" />
-              <input 
-                v-model="address" 
-                type="text" 
-                class="form-input" 
-                placeholder="Ej: Jr. Las Gardenias 342" 
-                style="padding-left: 40px;" 
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Límite de Crédito sugerido (S/.):</label>
+        <div class="form-group">
+          <label class="form-label">Dirección / Referencia:</label>
+          <div style="position: relative;">
+            <MapPin :size="16" style="position: absolute; left: 14px; top: 12px; color: var(--slate-400);" />
             <input 
-              v-model="creditLimit" 
-              type="number" 
-              step="50" 
+              v-model="address" 
+              type="text" 
               class="form-input" 
-              placeholder="300" 
+              placeholder="Ej: Jr. Las Gardenias 342" 
+              style="padding-left: 40px;" 
             />
           </div>
         </div>

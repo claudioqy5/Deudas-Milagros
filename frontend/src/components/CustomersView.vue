@@ -44,13 +44,21 @@ defineExpose({
 });
 
 const filtered = computed(() => {
-  if (!search.value.trim()) return customers.value;
-  const q = search.value.toLowerCase();
-  return customers.value.filter(c => 
-    c.name.toLowerCase().includes(q) || 
-    c.phone.includes(q) || 
-    (c.documentNumber && c.documentNumber.includes(q))
-  );
+  let list = customers.value;
+  if (search.value.trim()) {
+    const q = search.value.toLowerCase();
+    list = list.filter(c => 
+      c.name.toLowerCase().includes(q) || 
+      c.phone.includes(q) || 
+      (c.documentNumber && c.documentNumber.includes(q))
+    );
+  }
+  return [...list].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    if (timeA !== timeB) return timeB - timeA;
+    return (b.id || '').localeCompare(a.id || '');
+  });
 });
 
 const handleWhatsAppClick = async (c: Customer) => {
@@ -154,9 +162,6 @@ const deleteCustomer = async (c: Customer) => {
                   </div>
                   <div>
                     <div style="font-weight: 700; color: var(--slate-900); font-size: 0.94rem;">{{ c.name }}</div>
-                    <div style="font-size: 0.74rem; color: var(--slate-400);">
-                      Límite: S/. {{ c.creditLimit }}
-                    </div>
                   </div>
                 </div>
               </td>
@@ -209,7 +214,6 @@ const deleteCustomer = async (c: Customer) => {
                     @click="emit('edit-customer', c)"
                   >
                     <Edit3 :size="14" />
-                    <span>Editar</span>
                   </button>
 
                   <button 

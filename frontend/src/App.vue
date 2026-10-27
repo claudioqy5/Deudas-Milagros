@@ -26,12 +26,12 @@ const isMobileSidebarOpen = ref(false);
 
 const getViewTitle = (view: string) => {
   switch (view) {
-    case 'dashboard': return 'Dashboard';
+    case 'dashboard': return 'Inicio';
     case 'pos': return 'POS de Fiados';
-    case 'debts': return 'Deudas & Cobranzas';
-    case 'customers': return 'Lista de Clientes';
+    case 'debts': return 'Cobranza';
+    case 'customers': return 'Clientes';
     case 'inventory': return 'Inventario';
-    case 'users': return 'Usuarios & Personal';
+    case 'users': return 'Trabajadores';
     default: return '';
   }
 };

@@ -1636,11 +1636,12 @@ body {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+  padding: 16px 14px 10px 14px;
 }
 
 .chart-container-box {
   flex: 1;
-  min-height: 250px;
+  min-height: 270px;
   position: relative;
   min-width: 0;
   max-width: 100%;

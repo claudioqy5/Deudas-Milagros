@@ -37,9 +37,13 @@ public class CustomersController : ControllerBase
             filter = Builders<Customer>.Filter.And(filter, Builders<Customer>.Filter.Gt(c => c.CurrentDebt, 0));
         }
 
+        var sortDefinition = onlyDebtors
+            ? Builders<Customer>.Sort.Descending(c => c.CurrentDebt)
+            : Builders<Customer>.Sort.Descending(c => c.CreatedAt).Descending(c => c.Id);
+
         var customers = await _db.Customers
             .Find(filter)
-            .SortByDescending(c => c.CurrentDebt)
+            .Sort(sortDefinition)
             .ToListAsync();
 
         return Ok(customers);

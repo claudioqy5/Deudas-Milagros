@@ -154,7 +154,7 @@ const handleLogout = () => {
         @click="handleNav('dashboard')"
       >
         <LayoutDashboard class="nav-icon" :size="19" />
-        <span class="sidebar-text">Dashboard</span>
+        <span class="sidebar-text">Inicio</span>
       </div>
 
       <div 
@@ -174,7 +174,7 @@ const handleLogout = () => {
         @click="handleNav('debts')"
       >
         <Receipt class="nav-icon" :size="19" />
-        <span class="sidebar-text">Deudas & Cobranzas</span>
+        <span class="sidebar-text">Cobranza</span>
         
         <!-- Expanded badge -->
         <span v-if="debtorsCount > 0" class="nav-badge">{{ debtorsCount }}</span>
@@ -189,7 +189,7 @@ const handleLogout = () => {
         @click="handleNav('customers')"
       >
         <Users class="nav-icon" :size="19" />
-        <span class="sidebar-text">Lista de Clientes</span>
+        <span class="sidebar-text">Clientes</span>
       </div>
 
       <div 
@@ -222,7 +222,7 @@ const handleLogout = () => {
         @click="handleNav('users')"
       >
         <UserCheck class="nav-icon" :size="19" />
-        <span class="sidebar-text">Usuarios & Personal</span>
+        <span class="sidebar-text">Trabajadores</span>
       </div>
     </nav>
 
