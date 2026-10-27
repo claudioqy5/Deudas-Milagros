@@ -5,6 +5,8 @@ services:
     image: mongo:7.0
     container_name: bodega_mongodb
     restart: always
+    ports:
+      - "127.0.0.1:27021:27017"
     volumes:
       - mongo_data:/data/db
     networks:
