@@ -785,6 +785,46 @@ const saveProduct = async () => {
                   </div>
                 </div>
               </div>
+
+              <!-- Pack Custom Image -->
+              <div style="display: flex; align-items: center; gap: 10px; padding-top: 8px; border-top: 1px dashed #e2e8f0;">
+                <div 
+                  v-if="pack.imageUrl"
+                  style="position: relative; width: 44px; height: 44px; border-radius: 6px; overflow: hidden; border: 1px solid #cbd5e1; flex-shrink: 0;"
+                >
+                  <img :src="pack.imageUrl" alt="Foto pack" style="width: 100%; height: 100%; object-fit: cover;" />
+                  <button 
+                    type="button" 
+                    style="position: absolute; top: 1px; right: 1px; background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 3px; width: 16px; height: 16px; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                    title="Quitar foto"
+                    @click="pack.imageUrl = ''"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div v-else style="width: 44px; height: 44px; border-radius: 6px; background: #f1f5f9; border: 1px dashed #94a3b8; display: flex; align-items: center; justify-content: center; color: #94a3b8; flex-shrink: 0;">
+                  <ImageIcon :size="20" />
+                </div>
+
+                <div style="flex: 1;">
+                  <label 
+                    class="btn btn-secondary btn-sm" 
+                    style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; padding: 4px 10px; font-size: 0.76rem;"
+                  >
+                    <Upload :size="13" />
+                    <span>{{ pack.imageUrl ? 'Cambiar foto del pack' : 'Subir foto para este pack (opcional)' }}</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style="display: none;" 
+                      @change="(e) => handlePackFileChange(e, index)"
+                    />
+                  </label>
+                  <div style="font-size: 0.72rem; color: var(--slate-400); margin-top: 2px;">
+                    {{ pack.imageUrl ? 'Foto personalizada asignada al pack' : 'Si no subes una, se usará la foto del producto principal.' }}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

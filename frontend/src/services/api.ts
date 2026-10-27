@@ -202,6 +202,47 @@ export const api = {
     authState.clearUser();
   },
 
+  async verifyAdminPassword(password: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/auth/verify-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      if (res.ok) return true;
+    } catch {
+      // fallback
+    }
+
+    const current = authState.getUser();
+    const usernamesToTry: string[] = [];
+    if (current && current.role === 'Admin') {
+      usernamesToTry.push(current.username);
+    }
+    if (!usernamesToTry.includes('admin')) {
+      usernamesToTry.push('admin');
+    }
+
+    for (const u of usernamesToTry) {
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.role === 'Admin') {
+            return true;
+          }
+        }
+      } catch {
+        // continue
+      }
+    }
+    throw new Error('Contraseña incorrecta. Este espacio es exclusivo del administrador.');
+  },
+
   // Users Management (Workers)
   async getUsers(): Promise<User[]> {
     const res = await fetch(`${API_BASE}/users`);

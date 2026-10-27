@@ -86,7 +86,7 @@ const submitPayment = async () => {
 
 <template>
   <div v-if="customer" class="modal-overlay" @click.self="emit('close')">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content" style="max-width: 40%;">
       <!-- Header -->
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px;">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { 
   LayoutDashboard, 
   ShoppingCart, 
@@ -33,11 +33,17 @@ const emit = defineEmits<{
   (e: 'logout'): void;
   (e: 'toggle-pin', isPinned: boolean): void;
   (e: 'close-mobile'): void;
+  (e: 'expanded-change', isExpanded: boolean): void;
 }>();
 
-const isHovered = ref(false);
 const isPinned = ref(localStorage.getItem('bodega_sidebar_pinned') === 'true');
-const isForceCollapsed = ref(false);
+const isOpen = ref(false); // Explicit open state for click / touch
+const isMouseHovered = ref(false);
+const ignoreHover = ref(false); // Blocks hover re-activation right after a selection
+
+const isVisuallyOpen = computed(() => {
+  return isPinned.value || isOpen.value || isMouseHovered.value;
+});
 
 const togglePin = () => {
   sounds.playClick();
@@ -49,40 +55,90 @@ const togglePin = () => {
 // Emit initial state
 emit('toggle-pin', isPinned.value);
 
-const handleNav = (view: string) => {
-  sounds.playClick();
-  isForceCollapsed.value = true;
-  isHovered.value = false;
+const openSidebar = () => {
+  if (!isVisuallyOpen.value) {
+    sounds.playClick();
+    isOpen.value = true;
+    emit('expanded-change', true);
+  }
+};
+
+const closeSidebar = () => {
+  isOpen.value = false;
+  isMouseHovered.value = false;
   isPinned.value = false;
   localStorage.setItem('bodega_sidebar_pinned', 'false');
+  emit('expanded-change', false);
   emit('toggle-pin', false);
+
+  // Block mouse hover re-activation for 400ms so the sidebar actually collapses
+  ignoreHover.value = true;
+  setTimeout(() => { ignoreHover.value = false; }, 400);
+};
+
+const handleNav = (view: string, e?: Event) => {
+  if (e) e.stopPropagation();
+
+  // If the sidebar is closed: FIRST TAP/CLICK OPENS IT
+  if (!isVisuallyOpen.value) {
+    openSidebar();
+    return;
+  }
+
+  // Sidebar is open: navigate and immediately close
+  sounds.playClick();
   emit('navigate', view);
   emit('close-mobile');
+  closeSidebar();
 };
 
-const handleQuickSale = () => {
+const handleQuickSale = (e?: Event) => {
+  if (e) e.stopPropagation();
+
+  if (!isVisuallyOpen.value) {
+    openSidebar();
+    return;
+  }
+
   sounds.playClick();
-  isForceCollapsed.value = true;
-  isHovered.value = false;
-  isPinned.value = false;
-  localStorage.setItem('bodega_sidebar_pinned', 'false');
-  emit('toggle-pin', false);
   emit('quick-sale');
   emit('close-mobile');
+  closeSidebar();
 };
 
-const onMouseEnter = () => {
-  isForceCollapsed.value = false;
-  isHovered.value = true;
+const onPointerEnter = (e: PointerEvent) => {
+  // Only trigger for real mouse pointer, never touch — and only when not ignoring
+  if (e.pointerType === 'mouse' && !ignoreHover.value) {
+    isMouseHovered.value = true;
+  }
 };
 
-const onMouseLeave = () => {
-  isHovered.value = false;
-  isForceCollapsed.value = false;
+const onPointerLeave = (e: PointerEvent) => {
+  if (e.pointerType === 'mouse') {
+    isMouseHovered.value = false;
+  }
+  ignoreHover.value = false;
 };
 
-const handleLogout = () => {
+const toggleBrand = (e?: Event) => {
+  if (e) e.stopPropagation();
   sounds.playClick();
+  if (isVisuallyOpen.value) {
+    closeSidebar();
+  } else {
+    openSidebar();
+  }
+};
+
+defineExpose({
+  closeTouchExpanded: closeSidebar,
+  closeSidebar
+});
+
+const handleLogout = (e?: Event) => {
+  if (e) e.stopPropagation();
+  sounds.playClick();
+  closeSidebar();
   emit('logout');
 };
 </script>
@@ -92,15 +148,15 @@ const handleLogout = () => {
     class="sidebar" 
     :class="{ 
       'is-pinned': isPinned, 
-      'is-hovered': isHovered,
-      'is-force-collapsed': isForceCollapsed,
+      'is-open': isVisuallyOpen,
       'is-mobile-open': isMobileOpen
     }"
-    @mouseenter="onMouseEnter"
-    @mouseleave="onMouseLeave"
+    @pointerenter="onPointerEnter"
+    @pointerleave="onPointerLeave"
+    @click="openSidebar"
   >
     <!-- Brand Header -->
-    <div class="brand-section">
+    <div class="brand-section" style="cursor: pointer;" @click.stop="toggleBrand">
       <div class="brand-icon" title="BodegaPOS">
         <Store :size="22" />
       </div>
@@ -117,7 +173,7 @@ const handleLogout = () => {
         class="pin-btn" 
         :class="{ active: isPinned }"
         :title="isPinned ? 'Desanclar barra (modo auto-ocultar al quitar cursor)' : 'Fijar barra abierta'"
-        @click="togglePin"
+        @click.stop="togglePin"
       >
         <Pin v-if="!isPinned" :size="15" />
         <PinOff v-else :size="15" />
@@ -127,7 +183,7 @@ const handleLogout = () => {
       <button 
         class="mobile-sidebar-close" 
         title="Cerrar Menú"
-        @click="emit('close-mobile')"
+        @click.stop="emit('close-mobile')"
       >
         <X :size="19" />
       </button>
@@ -138,7 +194,7 @@ const handleLogout = () => {
       <button 
         class="btn btn-primary quick-sale-btn" 
         title="Vender al Fiado"
-        @click="handleQuickSale"
+        @click.stop="(e) => handleQuickSale(e)"
       >
         <PlusCircle class="quick-sale-icon" :size="19" />
         <span class="sidebar-text">Vender al Fiado</span>
@@ -151,7 +207,7 @@ const handleLogout = () => {
         class="nav-item" 
         :class="{ active: currentView === 'dashboard' }"
         title="Dashboard general"
-        @click="handleNav('dashboard')"
+        @click.stop="(e) => handleNav('dashboard', e)"
       >
         <LayoutDashboard class="nav-icon" :size="19" />
         <span class="sidebar-text">Inicio</span>
@@ -161,7 +217,7 @@ const handleLogout = () => {
         class="nav-item" 
         :class="{ active: currentView === 'pos' }"
         title="Punto de venta de fiados"
-        @click="handleNav('pos')"
+        @click.stop="(e) => handleNav('pos', e)"
       >
         <ShoppingCart class="nav-icon" :size="19" />
         <span class="sidebar-text">POS de Fiados</span>
@@ -171,7 +227,7 @@ const handleLogout = () => {
         class="nav-item" 
         :class="{ active: currentView === 'debts' }"
         title="Deudas y cobranzas pendientes"
-        @click="handleNav('debts')"
+        @click.stop="(e) => handleNav('debts', e)"
       >
         <Receipt class="nav-icon" :size="19" />
         <span class="sidebar-text">Cobranza</span>
@@ -186,7 +242,7 @@ const handleLogout = () => {
         class="nav-item" 
         :class="{ active: currentView === 'customers' }"
         title="Directorio de clientes"
-        @click="handleNav('customers')"
+        @click.stop="(e) => handleNav('customers', e)"
       >
         <Users class="nav-icon" :size="19" />
         <span class="sidebar-text">Clientes</span>
@@ -196,7 +252,7 @@ const handleLogout = () => {
         class="nav-item" 
         :class="{ active: currentView === 'inventory' }"
         title="Catálogo e inventario de productos"
-        @click="handleNav('inventory')"
+        @click.stop="(e) => handleNav('inventory', e)"
       >
         <Package class="nav-icon" :size="19" />
         <span class="sidebar-text">Inventario</span>
@@ -213,13 +269,12 @@ const handleLogout = () => {
         <span v-if="lowStockCount > 0" class="nav-dot" style="background-color: #f59e0b;"></span>
       </div>
 
-      <!-- Admin-Only Section: Usuarios / Trabajadores -->
+      <!-- Section: Usuarios / Trabajadores (Protegido por clave de administrador) -->
       <div 
-        v-if="currentUser?.role === 'Admin'"
         class="nav-item" 
         :class="{ active: currentView === 'users' }"
-        title="Usuarios y personal"
-        @click="handleNav('users')"
+        title="Usuarios y personal (Exclusivo Administrador)"
+        @click.stop="(e) => handleNav('users', e)"
       >
         <UserCheck class="nav-icon" :size="19" />
         <span class="sidebar-text">Trabajadores</span>

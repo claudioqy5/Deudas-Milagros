@@ -59,6 +59,25 @@ public class AuthController : ControllerBase
         });
     }
 
+    [HttpPost("verify-admin")]
+    public async Task<ActionResult> VerifyAdmin([FromBody] VerifyAdminDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Password))
+        {
+            return BadRequest(new { message = "Contraseña de administrador requerida" });
+        }
+
+        var hash = HashPassword(dto.Password);
+        var admin = await _db.Users.Find(u => u.Role == "Admin" && u.IsActive && u.PasswordHash == hash).FirstOrDefaultAsync();
+
+        if (admin == null)
+        {
+            return Unauthorized(new { message = "Contraseña incorrecta. Este espacio es exclusivo del administrador." });
+        }
+
+        return Ok(new { success = true });
+    }
+
     public static string HashPassword(string password)
     {
         using var sha256 = SHA256.Create();

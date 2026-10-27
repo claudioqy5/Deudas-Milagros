@@ -3,9 +3,7 @@ import { ref } from 'vue';
 import { 
   X, 
   Receipt, 
-  Calendar, 
-  Wallet, 
-  MessageSquare
+  Calendar 
 } from 'lucide-vue-next';
 import type { CustomerStatement } from '../services/api';
 
@@ -171,30 +169,10 @@ const activeTab = ref<'sales' | 'payments'>('sales');
       </div>
 
       <!-- Footer Actions -->
-      <div class="modal-footer" style="justify-content: space-between;">
-        <button 
-          v-if="statement.balanceDue > 0"
-          class="btn btn-primary btn-sm"
-          @click="emit('open-payment', statement.customer)"
-        >
-          <Wallet :size="15" />
-          <span>Registrar Abono</span>
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button class="btn btn-secondary btn-sm" @click="emit('close')">
+          Cerrar
         </button>
-        <div v-else></div>
-
-        <div style="display: flex; gap: 8px;">
-          <button 
-            v-if="statement.balanceDue > 0"
-            class="btn btn-wsp btn-sm" 
-            @click="emit('open-whatsapp', statement)"
-          >
-            <MessageSquare :size="15" />
-            <span>Cobranza por WhatsApp</span>
-          </button>
-          <button class="btn btn-secondary btn-sm" @click="emit('close')">
-            Cerrar
-          </button>
-        </div>
       </div>
     </div>
   </div>

@@ -8,10 +8,11 @@ import {
   Phone, 
   MessageSquare, 
   Wallet, 
-  ArrowUpRight, 
+  ArrowUpRight,
   Calendar,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Sparkles,
   RotateCcw,
   CalendarDays
@@ -368,52 +369,18 @@ const handlePaymentQuick = (customer: Customer) => {
 
 <template>
   <div class="page-container">
-    <!-- Filter Bar (Dia, Semana, Mes, Año, Todo) -->
-    <div class="dashboard-filter-bar">
-      <!-- Tabs: Period Selector -->
-      <div class="filter-periods-tabs">
-        <button 
-          class="filter-period-btn" 
-          :class="{ active: selectedPeriod === 'day' }"
-          @click="setPeriod('day')"
-        >
-          <CalendarDays :size="15" />
-          <span>Día</span>
-        </button>
-
-        <button 
-          class="filter-period-btn" 
-          :class="{ active: selectedPeriod === 'week' }"
-          @click="setPeriod('week')"
-        >
-          <span>Semana</span>
-        </button>
-
-        <button 
-          class="filter-period-btn" 
-          :class="{ active: selectedPeriod === 'month' }"
-          @click="setPeriod('month')"
-        >
-          <span>Mes</span>
-        </button>
-
-        <button 
-          class="filter-period-btn" 
-          :class="{ active: selectedPeriod === 'year' }"
-          @click="setPeriod('year')"
-        >
-          <span>Año</span>
-        </button>
-
-        <button 
-          class="filter-period-btn" 
-          :class="{ active: selectedPeriod === 'all' }"
-          @click="setPeriod('all')"
-        >
-          <Sparkles :size="14" />
-          <span>Todo</span>
-        </button>
+    <!-- Top Header Row: Title & Date Filters Side-by-Side -->
+    <div class="dashboard-top-header-row">
+      <div class="dashboard-title-block">
+        <h2 class="pos-main-title">Panel Principal y Balance</h2>
+        <p class="pos-sub-title">
+          Resumen general y estadísticas financieras
+        </p>
       </div>
+
+      <!-- Filter Bar (Dia, Semana, Mes, Año, Todo) -->
+      <div class="dashboard-filter-bar">
+      
 
       <!-- Context Controls: Date Picker & Quick Navigation -->
       <div class="filter-controls-group">
@@ -530,9 +497,27 @@ const handlePaymentQuick = (customer: Customer) => {
           </div>
         </template>
       </div>
+      <!-- Dropdown: Period Selector -->
+      <div class="period-select-wrapper">
+        <CalendarDays :size="15" class="period-select-icon" />
+        <select 
+          :value="selectedPeriod" 
+          @change="(e) => setPeriod((e.target as HTMLSelectElement).value as PeriodType)"
+          class="period-select-input"
+          title="Seleccionar periodo de análisis"
+        >
+          <option value="day">Día</option>
+          <option value="week">Semana</option>
+          <option value="month">Mes</option>
+          <option value="year">Año</option>
+          <option value="all">Todo</option>
+        </select>
+        <ChevronDown :size="13" class="period-select-chevron" />
+      </div>
     </div>
+  </div>
 
-    <!-- Active Filter Summary Banner -->
+  <!-- Active Filter Summary Banner -->
     <div 
       v-if="selectedPeriod !== 'all'"
       class="dashboard-filter-banner"
@@ -691,18 +676,16 @@ const handlePaymentQuick = (customer: Customer) => {
                 <div class="debtor-name">
                   {{ debtor.name }}
                 </div>
-                <div class="debtor-meta">
+                <div v-if="debtor.phone" class="debtor-meta">
                   <span class="debtor-phone">
                     <Phone :size="12" />
                     {{ debtor.phone }}
                   </span>
-                  <span>•</span>
-                  <span>Límite: S/. {{ debtor.creditLimit }}</span>
                 </div>
               </div>
             </div>
 
-            <!-- Amount & Actions -->
+            <!-- Amount -->
             <div class="debtor-item-summary">
               <div class="debtor-amount-box">
                 <div class="debtor-amount-label">
@@ -711,25 +694,6 @@ const handlePaymentQuick = (customer: Customer) => {
                 <div class="debtor-amount-val">
                   S/. {{ debtor.currentDebt.toFixed(2) }}
                 </div>
-              </div>
-
-              <div class="debtor-action-buttons">
-                <button 
-                  class="btn btn-wsp btn-sm" 
-                  title="Enviar cobranza por WhatsApp"
-                  @click="handleWspQuick(debtor)"
-                >
-                  <MessageSquare :size="14" />
-                  <span>Cobrar</span>
-                </button>
-                <button 
-                  class="btn btn-secondary btn-sm" 
-                  title="Registrar abono de dinero"
-                  @click="handlePaymentQuick(debtor)"
-                >
-                  <Wallet :size="14" />
-                  <span>Abonar</span>
-                </button>
               </div>
             </div>
           </div>
@@ -754,3 +718,111 @@ const handlePaymentQuick = (customer: Customer) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.dashboard-top-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.dashboard-title-block {
+  min-width: 240px;
+}
+
+.dashboard-top-header-row .dashboard-filter-bar {
+  margin-bottom: 0;
+}
+
+.period-select-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  background: var(--slate-100);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0 8px;
+  height: 32px;
+  transition: all 0.15s ease;
+}
+
+.period-select-wrapper:hover {
+  background: var(--slate-200);
+  border-color: var(--slate-300);
+}
+
+.period-select-wrapper:focus-within {
+  border-color: #0f172a;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+.period-select-icon {
+  color: var(--slate-600);
+  pointer-events: none;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+
+.period-select-input {
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--slate-900);
+  outline: none;
+  cursor: pointer;
+  padding-right: 18px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.period-select-chevron {
+  position: absolute;
+  right: 6px;
+  color: var(--slate-500);
+  pointer-events: none;
+}
+
+.dashboard-main-grid {
+  grid-template-columns: minmax(320px, 0.72fr) 1.28fr;
+}
+
+.debtor-item-row {
+  padding: 8px 12px;
+  gap: 10px;
+}
+
+.debtor-name {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.debtor-meta {
+  margin-top: 2px;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-top-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dashboard-top-header-row .dashboard-filter-bar {
+    width: 100%;
+  }
+}
+</style>

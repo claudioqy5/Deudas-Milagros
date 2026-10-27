@@ -15,6 +15,7 @@ import PaymentModal from './components/PaymentModal.vue';
 import CustomerStatementModal from './components/CustomerStatementModal.vue';
 import NewCustomerModal from './components/NewCustomerModal.vue';
 import NewProductModal from './components/NewProductModal.vue';
+import AdminAuthModal from './components/AdminAuthModal.vue';
 
 import type { Customer, Product, CustomerStatement, DashboardSummary, LoginResponse } from './services/api';
 import { api, authState } from './services/api';
@@ -23,6 +24,8 @@ const currentUser = ref<LoginResponse | null>(null);
 const currentView = ref<'dashboard' | 'pos' | 'debts' | 'customers' | 'inventory' | 'users'>('dashboard');
 const isSidebarPinned = ref(localStorage.getItem('bodega_sidebar_pinned') === 'true');
 const isMobileSidebarOpen = ref(false);
+const isSidebarExpandedOverlay = ref(false);
+const sidebarRef = ref<any>(null);
 
 const getViewTitle = (view: string) => {
   switch (view) {
@@ -59,6 +62,8 @@ const customerToEdit = ref<Customer | null>(null);
 
 const showNewProductModal = ref(false);
 const productToEdit = ref<Product | null>(null);
+
+const showAdminAuthModal = ref(false);
 
 // Component Refs
 const dashboardRef = ref<any>(null);
@@ -104,14 +109,33 @@ onMounted(() => {
 });
 
 const handleNavigate = (view: string) => {
-  // Protect users section from workers
-  if (view === 'users' && currentUser.value?.role !== 'Admin') {
-    currentView.value = 'dashboard';
+  // Protect Trabajadores (users) section: require admin password
+  if (view === 'users') {
+    showAdminAuthModal.value = true;
     isMobileSidebarOpen.value = false;
+    isSidebarExpandedOverlay.value = false;
     return;
   }
   currentView.value = view as any;
   isMobileSidebarOpen.value = false;
+  isSidebarExpandedOverlay.value = false;
+};
+
+const onAdminAuthSuccess = () => {
+  showAdminAuthModal.value = false;
+  currentView.value = 'users';
+};
+
+const handleSidebarExpandedChange = (expanded: boolean) => {
+  isSidebarExpandedOverlay.value = expanded;
+};
+
+const handleBackdropClick = () => {
+  isMobileSidebarOpen.value = false;
+  isSidebarExpandedOverlay.value = false;
+  if (sidebarRef.value?.closeTouchExpanded) {
+    sidebarRef.value.closeTouchExpanded();
+  }
 };
 
 const refreshAll = async () => {
@@ -162,6 +186,7 @@ const handleEditProduct = (p: Product) => {
 const handleQuickSale = () => {
   currentView.value = 'pos';
   isMobileSidebarOpen.value = false;
+  isSidebarExpandedOverlay.value = false;
 };
 
 // POS Shopping Cart State for Topbar Badge Notice
@@ -203,15 +228,16 @@ const handleProductSaved = async () => {
 
   <!-- Main System if authenticated -->
   <div v-else class="app-container">
-    <!-- Backdrop for tablet/mobile sidebar drawer -->
+    <!-- Backdrop for tablet/mobile sidebar drawer & touch expansion -->
     <div 
-      v-if="isMobileSidebarOpen" 
+      v-if="isMobileSidebarOpen || isSidebarExpandedOverlay" 
       class="sidebar-backdrop" 
-      @click="isMobileSidebarOpen = false"
+      @click="handleBackdropClick"
     ></div>
 
     <!-- Sidebar Navigation -->
     <Sidebar 
+      ref="sidebarRef"
       :current-view="currentView"
       :debtors-count="summary?.activeDebtorsCount || 0"
       :low-stock-count="summary?.lowStockProductsCount || 0"
@@ -222,6 +248,7 @@ const handleProductSaved = async () => {
       @logout="onLogout"
       @toggle-pin="handleTogglePin"
       @close-mobile="isMobileSidebarOpen = false"
+      @expanded-change="handleSidebarExpandedChange"
     />
 
     <!-- Main Content Area -->
@@ -343,6 +370,13 @@ const handleProductSaved = async () => {
       :categories="categories"
       @close="showNewProductModal = false; productToEdit = null"
       @product-saved="handleProductSaved"
+    />
+
+    <!-- Admin Password Gate Modal for Trabajadores -->
+    <AdminAuthModal 
+      v-if="showAdminAuthModal"
+      @close="showAdminAuthModal = false"
+      @authenticated="onAdminAuthSuccess"
     />
   </div>
 </template>

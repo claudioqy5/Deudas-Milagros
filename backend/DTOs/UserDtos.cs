@@ -41,3 +41,8 @@ public class UserDto
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLogin { get; set; }
 }
+
+public class VerifyAdminDto
+{
+    public string Password { get; set; } = string.Empty;
+}

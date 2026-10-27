@@ -15,7 +15,8 @@ import {
   Boxes,
   Link2,
   User,
-  X
+  X,
+  ChevronDown
 } from 'lucide-vue-next';
 import confetti from 'canvas-confetti';
 import type { Customer, Product, ProductPack, CustomerStatement } from '../services/api';
@@ -152,11 +153,84 @@ const clearSelectedCustomer = () => {
   customerSearch.value = '';
 };
 
-const filteredProducts = computed(() => {
-  return products.value.filter(p => {
-    const matchesCat = selectedCategory.value === 'Todos' || p.category === selectedCategory.value;
-    const matchesSearch = !productSearch.value.trim() || 
-      p.name.toLowerCase().includes(productSearch.value.toLowerCase());
+interface PosCardItem {
+  id: string;
+  product: Product;
+  pack?: ProductPack;
+  displayName: string;
+  category: string;
+  price: number;
+  imageUrl?: string;
+  isInfiniteStock: boolean;
+  stockText: string;
+  isCombo: boolean;
+  comboItems?: any[];
+  isPack: boolean;
+  packUnitsCount?: number;
+}
+
+const displayProducts = computed<PosCardItem[]>(() => {
+  const list: PosCardItem[] = [];
+
+  for (const prod of products.value) {
+    // 1. Tarjeta base para la unidad individual del producto
+    list.push({
+      id: prod.id,
+      product: prod,
+      displayName: prod.name,
+      category: prod.category,
+      price: prod.salePrice,
+      imageUrl: prod.imageUrl,
+      isInfiniteStock: prod.isInfiniteStock,
+      stockText: prod.isInfiniteStock ? 'Ilimitado' : `${prod.stock} ${prod.unit}`,
+      isCombo: !!prod.isCombo,
+      comboItems: prod.comboItems,
+      isPack: false
+    });
+
+    // 2. Tarjetas independientes para cada pack/presentación (Sixpack, Caja, etc.)
+    if (prod.packs && prod.packs.length > 0) {
+      for (const pk of prod.packs) {
+        let packStockText = 'Ilimitado';
+        if (!prod.isInfiniteStock) {
+          const packsAvailable = pk.unitsCount > 0 ? Math.floor(prod.stock / pk.unitsCount) : 0;
+          packStockText = `${packsAvailable} ${packsAvailable === 1 ? 'pack' : 'packs'}`;
+        }
+
+        list.push({
+          id: `${prod.id}__${pk.id}`,
+          product: prod,
+          pack: pk,
+          displayName: `${prod.name} (${pk.name})`,
+          category: prod.category,
+          price: pk.price,
+          imageUrl: pk.imageUrl || prod.imageUrl,
+          isInfiniteStock: prod.isInfiniteStock,
+          stockText: packStockText,
+          isCombo: false,
+          isPack: true,
+          packUnitsCount: pk.unitsCount
+        });
+      }
+    }
+  }
+
+  return list.filter(item => {
+    let matchesCat = false;
+    if (selectedCategory.value === 'Todos') {
+      matchesCat = true;
+    } else if (selectedCategory.value === 'Combos y Packs') {
+      matchesCat = item.isPack || item.isCombo || item.category === 'Combos y Packs';
+    } else {
+      matchesCat = item.category === selectedCategory.value;
+    }
+
+    const q = productSearch.value.trim().toLowerCase();
+    const matchesSearch = !q || 
+      item.displayName.toLowerCase().includes(q) ||
+      (item.pack && item.pack.name.toLowerCase().includes(q)) ||
+      item.product.name.toLowerCase().includes(q);
+
     return matchesCat && matchesSearch;
   });
 });
@@ -284,16 +358,6 @@ const sendWspTicket = async () => {
 
 <template>
   <div class="page-container pos-page-container">
-    <!-- Top Header -->
-    <div class="pos-top-header">
-      <div>
-        <h2 class="pos-main-title">Punto de Venta al Fiado</h2>
-        <p class="pos-sub-title">
-          Toca cualquier producto para agregarlo al carrito y luego cárgalo al cliente
-        </p>
-      </div>
-    </div>
-
     <!-- Floating Avisito Toast when item is added -->
     <Transition name="toast-slide">
       <div 
@@ -313,23 +377,37 @@ const sendWspTicket = async () => {
 
     <!-- MAIN POS CONTAINER: 2 Columns on Desktop, Single Column + Drawer on Mobile -->
     <div class="pos-main-container">
-      <!-- PRODUCTS PANEL -->
-      <div class="pos-fullscreen-panel glass-card">
-      <!-- Categories Pills Row -->
-      <div class="pos-categories-wrapper">
-        <button 
-          v-for="cat in categories" 
-          :key="cat"
-          class="pos-category-btn"
-          :class="{ active: selectedCategory === cat }"
-          @click="selectedCategory = cat"
-        >
-          {{ cat }}
-        </button>
-      </div>
+      <!-- LEFT COLUMN: HEADER + PRODUCTS -->
+      <div class="pos-products-column">
+        <!-- Top Header with Title and Category Dropdown -->
+        <div class="pos-top-header">
+          <div class="pos-title-wrap">
+            <h2 class="pos-main-title">Punto de Venta al Fiado</h2>
+            <p class="pos-sub-title">
+              Toca cualquier producto para agregarlo al carrito y luego cárgalo al cliente
+            </p>
+          </div>
 
-      <!-- Search Input -->
-      <div class="search-bar pos-products-search">
+          <!-- Category Select Dropdown moved beside title -->
+          <div class="pos-category-select-wrapper">
+            <Boxes :size="15" class="pos-category-icon" />
+            <select 
+              v-model="selectedCategory" 
+              class="pos-category-select-input"
+              title="Filtrar por categoría"
+            >
+              <option v-for="cat in categories" :key="cat" :value="cat">
+                {{ cat === 'Todos' ? 'Todas las Categorías' : cat }}
+              </option>
+            </select>
+            <ChevronDown :size="13" class="pos-category-chevron" />
+          </div>
+        </div>
+
+        <!-- PRODUCTS PANEL -->
+        <div class="pos-fullscreen-panel glass-card">
+          <!-- Search Input -->
+          <div class="search-bar pos-products-search">
         <Search class="search-icon" :size="16" />
         <input 
           v-model="productSearch" 
@@ -350,26 +428,36 @@ const sendWspTicket = async () => {
       <!-- Full-Width Products Grid -->
       <div class="pos-fullscreen-grid">
         <div 
-          v-for="prod in filteredProducts" 
-          :key="prod.id"
+          v-for="item in displayProducts" 
+          :key="item.id"
           class="pos-card-item"
-          @click="addToCart(prod)"
+          :class="{ 'is-pack-card': item.isPack }"
+          @click="addToCart(item.product, item.pack)"
         >
           <!-- Product Image Preview / Banner -->
           <div class="pos-item-img-wrap">
             <img 
-              v-if="prod.imageUrl" 
-              :src="prod.imageUrl" 
-              :alt="prod.name"
+              v-if="item.imageUrl" 
+              :src="item.imageUrl" 
+              :alt="item.displayName"
               class="pos-item-img"
             />
             <div v-else class="pos-item-placeholder">
-              <Package :size="30" />
+              <Boxes v-if="item.isPack" :size="30" />
+              <Package v-else :size="30" />
             </div>
 
-            <!-- Stock Tag Overlay -->
+            <!-- Category Tag Overlay (Top Left) -->
             <span 
-              v-if="prod.isInfiniteStock"
+              v-if="item.category" 
+              class="pos-category-tag"
+            >
+              {{ item.category }}
+            </span>
+
+            <!-- Stock Tag Overlay (Top Right) -->
+            <span 
+              v-if="item.isInfiniteStock"
               class="pos-stock-tag infinite"
             >
               <InfinityIcon :size="11" />
@@ -379,34 +467,37 @@ const sendWspTicket = async () => {
               v-else
               class="pos-stock-tag normal"
             >
-              {{ prod.stock }} {{ prod.unit }}
+              {{ item.stockText }}
             </span>
           </div>
 
           <!-- Product Details -->
           <div class="pos-item-info">
             <div>
-              <!-- Category & Combo Tag -->
-              <div class="pos-item-top-row">
-                <span class="pos-item-cat-label">{{ prod.category }}</span>
-                <span v-if="prod.isCombo" class="pos-item-combo-badge">
+              <!-- Combo or Pack Tag if applicable -->
+              <div v-if="item.isCombo || item.isPack" class="pos-item-top-row">
+                <span v-if="item.isCombo" class="pos-item-combo-badge">
                   <Link2 :size="10" />
                   Pack Fusionado
+                </span>
+                <span v-else-if="item.isPack" class="pos-item-pack-badge">
+                  <Boxes :size="11" />
+                  {{ item.pack?.name }} (x{{ item.packUnitsCount }})
                 </span>
               </div>
 
               <!-- Name -->
-              <div class="pos-item-title">
-                {{ prod.name }}
+              <div class="pos-item-title" :title="item.displayName">
+                {{ item.product.name }}
               </div>
 
               <!-- Combo components preview -->
               <div 
-                v-if="prod.isCombo && prod.comboItems && prod.comboItems.length > 0"
+                v-if="item.isCombo && item.comboItems && item.comboItems.length > 0"
                 class="pos-combo-components-box"
               >
                 <span class="combo-inc-label">Incluye: </span>
-                <span>{{ prod.comboItems.map(c => (c.quantity > 1 ? `${c.quantity}x ` : '') + c.productName).join(' + ') }}</span>
+                <span>{{ item.comboItems.map((c: any) => (c.quantity > 1 ? `${c.quantity}x ` : '') + c.productName).join(' + ') }}</span>
               </div>
             </div>
 
@@ -414,13 +505,19 @@ const sendWspTicket = async () => {
             <div class="pos-item-price-row">
               <div>
                 <div class="pos-item-price">
-                  S/. {{ prod.salePrice.toFixed(2) }}
+                  S/. {{ item.price.toFixed(2) }}
                 </div>
                 <div 
-                  v-if="prod.isCombo && prod.comboItems && prod.comboItems.length > 0"
+                  v-if="item.isCombo && item.comboItems && item.comboItems.length > 0"
                   class="pos-item-crossed-price"
                 >
-                  S/. {{ prod.comboItems.reduce((acc, c) => acc + (c.quantity * c.unitPrice), 0).toFixed(2) }} sep.
+                  S/. {{ item.comboItems.reduce((acc: number, c: any) => acc + (c.quantity * c.unitPrice), 0).toFixed(2) }} sep.
+                </div>
+                <div 
+                  v-else-if="item.isPack && item.packUnitsCount && item.product.salePrice"
+                  class="pos-item-crossed-price"
+                >
+                  S/. {{ (item.packUnitsCount * item.product.salePrice).toFixed(2) }} sep.
                 </div>
               </div>
 
@@ -429,37 +526,10 @@ const sendWspTicket = async () => {
               </div>
             </div>
           </div>
-
-          <!-- Pack options chips if product has packs -->
-          <div 
-            v-if="prod.packs && prod.packs.length > 0" 
-            class="pos-item-packs-container"
-          >
-            <div class="pos-packs-header">
-              <Boxes :size="11" />
-              Packs Disponibles:
-            </div>
-            <button 
-              v-for="pk in prod.packs" 
-              :key="pk.id"
-              type="button"
-              class="pos-pack-chip-btn"
-              title="Agregar este pack al carrito"
-              @click.stop="addToCart(prod, pk)"
-            >
-              <div class="pack-chip-name-box">
-                <img v-if="pk.imageUrl" :src="pk.imageUrl" class="pack-chip-img" />
-                <Boxes v-else :size="12" style="flex-shrink: 0;" />
-                <span class="pack-chip-title">{{ pk.name }}</span>
-              </div>
-              <div class="pack-chip-price">
-                + S/. {{ pk.price.toFixed(2) }}
-              </div>
-            </button>
-          </div>
         </div>
       </div>
     </div>
+  </div>
 
     <!-- SLIDE-OVER DRAWER FOR DETALLE DEL FIADO & CLIENTE -->
     <Transition name="drawer-fade">
@@ -482,9 +552,7 @@ const sendWspTicket = async () => {
           </div>
           <div>
             <h3 class="cart-drawer-title">Detalle del Fiado</h3>
-            <span class="cart-drawer-sub">
-              {{ cartTotalQuantity }} producto(s) en la canasta
-            </span>
+            
           </div>
         </div>
         <button class="cart-drawer-close-btn" title="Cerrar y seguir agregando" @click="closeCart">
@@ -515,10 +583,6 @@ const sendWspTicket = async () => {
               </div>
               <div class="drawer-cust-sub">
                 <span>📱 {{ selectedCustomer.phone }}</span>
-                <span v-if="selectedCustomer.creditLimit">• Límite: S/. {{ selectedCustomer.creditLimit }}</span>
-              </div>
-              <div v-if="isOverLimit" class="overlimit-warning-pill">
-                <AlertCircle :size="12" /> Límite de crédito excedido
               </div>
             </div>
             <button class="btn btn-secondary btn-xs btn-change-cust" @click="clearSelectedCustomer">
@@ -573,7 +637,7 @@ const sendWspTicket = async () => {
         </div>
 
         <!-- 2. Products List in Cart -->
-        <div class="drawer-box">
+        <div class="drawer-box cart-products-box">
           <div class="drawer-box-header justify-between">
             <div style="display: flex; align-items: center; gap: 6px;">
               <Package :size="15" />
@@ -721,3 +785,266 @@ const sendWspTicket = async () => {
   </div>
 </div>
 </template>
+
+<style scoped>
+.pos-products-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.pos-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+.pos-title-wrap {
+  flex: 1;
+  min-width: 240px;
+}
+
+.pos-category-select-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  transition: all 0.2s ease;
+  min-height: 42px;
+}
+
+.pos-category-select-wrapper:hover {
+  border-color: var(--slate-400);
+}
+
+.pos-category-select-wrapper:focus-within {
+  border-color: #0f172a;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+.pos-category-icon {
+  color: var(--slate-500);
+  pointer-events: none;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.pos-category-select-input {
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--slate-800);
+  outline: none;
+  cursor: pointer;
+  padding-right: 22px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  min-width: 160px;
+}
+
+.pos-category-chevron {
+  position: absolute;
+  right: 12px;
+  color: var(--slate-400);
+  pointer-events: none;
+}
+
+@media (min-width: 1025px) {
+  .cart-drawer {
+    top: 16px !important;
+    height: calc(100vh - 36px) !important;
+  }
+
+  .pos-fullscreen-panel {
+    min-height: calc(100vh - 110px);
+  }
+}
+
+/* Compact & Proportional Cart Drawer styles */
+.cart-drawer {
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-drawer-header {
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+
+.cart-drawer-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.cart-drawer-title {
+  font-size: 1.05rem;
+}
+
+.cart-drawer-sub {
+  font-size: 0.72rem;
+}
+
+.cart-drawer-body {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.drawer-box {
+  padding: 8px 10px;
+}
+
+.drawer-box-header {
+  margin-bottom: 5px;
+  font-size: 0.72rem;
+}
+
+.drawer-customer-selected {
+  padding: 6px 10px;
+  gap: 8px;
+}
+
+.drawer-cust-avatar {
+  width: 30px;
+  height: 30px;
+  font-size: 0.85rem;
+}
+
+.drawer-cust-top strong {
+  font-size: 0.86rem;
+}
+
+.drawer-cust-sub {
+  font-size: 0.72rem;
+}
+
+.customer-select-box {
+  flex-shrink: 0;
+}
+
+.cart-products-box {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.drawer-items-list {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  gap: 6px;
+  padding-right: 2px;
+}
+
+.drawer-item-row {
+  padding: 5px 8px;
+  gap: 6px;
+}
+
+.drawer-item-thumbnail {
+  width: 28px;
+  height: 28px;
+}
+
+.drawer-item-prod-name {
+  font-size: 0.82rem;
+}
+
+.payment-box {
+  padding: 7px 10px;
+  flex-shrink: 0;
+}
+
+.payment-label {
+  font-size: 0.75rem;
+}
+
+.payment-input {
+  height: 28px;
+  padding: 2px 8px;
+  font-size: 0.82rem;
+  max-width: 90px;
+}
+
+.form-input-sm {
+  height: 28px;
+  padding: 2px 8px;
+  font-size: 0.76rem;
+}
+
+.cart-drawer-footer {
+  padding: 10px 14px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.drawer-totals-card {
+  gap: 2px;
+}
+
+.drawer-subtotal-row {
+  font-size: 0.76rem;
+}
+
+.drawer-main-total-row {
+  padding-top: 4px;
+  margin-top: 2px;
+}
+
+.main-total-label {
+  font-size: 0.82rem;
+}
+
+.main-total-amount {
+  font-size: 1.2rem;
+}
+
+.drawer-projected-note {
+  font-size: 0.70rem;
+  margin-top: 1px;
+}
+
+.btn-submit-fiado {
+  padding: 9px 12px;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 1024px) {
+  .pos-top-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .pos-category-select-wrapper {
+    width: 100%;
+  }
+
+  .pos-category-select-input {
+    width: 100%;
+  }
+}
+</style>

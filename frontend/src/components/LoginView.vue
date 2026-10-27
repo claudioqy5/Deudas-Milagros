@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Store, Lock, User, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-vue-next';
 import { api } from '../services/api';
 import { sounds } from '../utils/sound';
+import fondoLogin from '../assets/fondologin.jpg';
 
 const emit = defineEmits<{
   (e: 'login-success'): void;
@@ -41,10 +42,15 @@ const setDemoUser = (u: string, p: string) => {
 </script>
 
 <template>
-  <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; padding: 20px;">
-    <div style="max-width: 440px; width: 100%;">
+  <div 
+    class="login-hero-container"
+    :style="{
+      backgroundImage: `linear-gradient(135deg, rgb(0 0 0 / 57%) 0%, rgb(0 0 0 / 25%) 100%), url(/src/assets/fondologin.jpg)`
+    }"
+  >
+    <div class="login-box-wrapper">
       <!-- Card -->
-      <div class="glass-card" style="padding: 36px 32px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg);">
+      <div class="login-glass-card">
         <!-- Brand Header -->
         <div style="text-align: center; margin-bottom: 28px;">
           <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);">
@@ -104,34 +110,7 @@ const setDemoUser = (u: string, p: string) => {
             <span>{{ loading ? 'Ingresando...' : 'Iniciar Sesión' }}</span>
             <ArrowRight :size="18" />
           </button>
-        </form>
-
-        <!-- Quick Demo Switcher -->
-        <div style="margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
-          <div style="font-size: 0.76rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; margin-bottom: 10px;">
-            Acceso Rápido de Prueba
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button 
-              type="button" 
-              class="btn btn-secondary btn-sm"
-              style="font-size: 0.78rem; padding: 8px 6px; flex-direction: column; gap: 2px;"
-              @click="setDemoUser('admin', 'admin123')"
-            >
-              <span style="font-weight: 700; color: var(--emerald-600);">Administrador</span>
-              <span style="font-size: 0.7rem; color: var(--slate-400);">admin / admin123</span>
-            </button>
-            <button 
-              type="button" 
-              class="btn btn-secondary btn-sm"
-              style="font-size: 0.78rem; padding: 8px 6px; flex-direction: column; gap: 2px;"
-              @click="setDemoUser('cajero', 'cajero123')"
-            >
-              <span style="font-weight: 700; color: var(--indigo-600);">Trabajador</span>
-              <span style="font-size: 0.7rem; color: var(--slate-400);">cajero / cajero123</span>
-            </button>
-          </div>
-        </div>
+        </form>        
       </div>
     </div>
   </div>
