@@ -2926,7 +2926,20 @@ body {
   }
 
   .pos-header-cart-btn {
-    display: inline-flex !important;
+    display: none !important;
+  }
+
+  .pos-top-header {
+    margin-bottom: 10px !important;
+    gap: 4px !important;
+  }
+
+  .pos-main-title {
+    font-size: 1.25rem !important;
+  }
+
+  .pos-sub-title {
+    font-size: 0.78rem !important;
   }
 
   .pos-added-toast {

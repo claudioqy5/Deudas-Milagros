@@ -292,21 +292,6 @@ const sendWspTicket = async () => {
           Toca cualquier producto para agregarlo al carrito y luego cárgalo al cliente
         </p>
       </div>
-
-      <!-- Header Cart Button (Always visible on any device) -->
-      <button 
-        class="btn btn-primary pos-header-cart-btn"
-        :class="{ 'has-items': cartTotalQuantity > 0 }"
-        title="Abrir Detalle del Fiado"
-        @click="openCart"
-      >
-        <div class="pos-header-cart-icon-box">
-          <ShoppingCart :size="17" />
-          <span v-if="cartTotalQuantity > 0" class="pos-header-cart-badge">{{ cartTotalQuantity }}</span>
-        </div>
-        <span class="pos-header-cart-text">Detalle del Fiado</span>
-        <span v-if="cartTotalQuantity > 0" class="pos-header-cart-total">• S/. {{ totalAmount.toFixed(2) }}</span>
-      </button>
     </div>
 
     <!-- Floating Avisito Toast when item is added -->
