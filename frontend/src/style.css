@@ -3003,12 +3003,178 @@ body {
   font-weight: 600;
 }
 
+/* Debts Header & Toolbar */
+.debts-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.debts-badge-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecdd3;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.debts-total-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  border: 1px solid #fecdd3;
+  box-shadow: var(--shadow-xs);
+}
+
+.debts-total-card .total-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #991b1b;
+  text-transform: uppercase;
+}
+
+.debts-total-card .total-amount {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #dc2626;
+}
+
+.debts-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.debts-search-bar {
+  flex: 1;
+  min-width: 240px;
+}
+
+.debts-filters-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.debts-date-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 0 10px;
+  height: 38px;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.debts-date-box:focus-within {
+  border-color: #0f172a;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+.debts-date-icon {
+  color: var(--slate-400);
+  pointer-events: none;
+}
+
+.debts-date-picker {
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--slate-800);
+  outline: none;
+  cursor: pointer;
+  padding-right: 4px;
+}
+
+.debts-clear-date-btn {
+  background: transparent;
+  border: none;
+  color: var(--slate-400);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.debts-clear-date-btn:hover {
+  color: #dc2626;
+}
+
+.debts-sort-btn {
+  height: 38px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
-  .debtor-row-card {
-    padding: 14px 16px;
+  .debts-header-row {
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+
+  .debts-total-card {
+    width: 100%;
+    justify-content: space-between;
+    padding: 6px 12px;
+  }
+
+  .debts-total-card .total-amount {
+    font-size: 1.15rem;
+  }
+
+  .debts-toolbar-row {
     flex-direction: column;
     align-items: stretch;
-    gap: 14px;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .debts-filters-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .debts-date-box, .debts-sort-btn {
+    width: 100%;
+    height: 35px;
+    justify-content: center;
+  }
+
+  .debts-date-picker {
+    width: 100%;
+    font-size: 0.76rem;
+  }
+
+  .debtor-row-card {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
   }
 
   .debtor-info-col {
@@ -3022,22 +3188,34 @@ body {
     justify-content: space-between;
     align-items: baseline;
     border-top: 1px dashed var(--border-subtle);
-    padding-top: 10px;
-    margin-top: -4px;
+    padding-top: 6px;
+    margin-top: -2px;
   }
 
+  /* Compact Action Buttons for Mobile/Tablet */
   .debtor-actions-col {
     width: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
+    gap: 5px;
+    margin-top: 2px;
   }
 
   .debtor-actions-col .btn {
     width: 100%;
     justify-content: center;
-    padding: 9px 6px;
-    font-size: 0.8rem;
+    padding: 5px 4px !important;
+    font-size: 0.72rem !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    border-radius: 6px !important;
+    gap: 4px !important;
+    font-weight: 700 !important;
+  }
+
+  .debtor-actions-col .btn svg {
+    width: 13px !important;
+    height: 13px !important;
   }
 }
 

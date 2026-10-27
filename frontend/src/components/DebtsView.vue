@@ -6,7 +6,9 @@ import {
   Receipt, 
   Phone, 
   AlertTriangle,
-  Eye
+  Eye,
+  Calendar,
+  ArrowUpDown
 } from 'lucide-vue-next';
 import type { Customer, CustomerStatement } from '../services/api';
 import { api } from '../services/api';
@@ -20,7 +22,8 @@ const emit = defineEmits<{
 
 const customers = ref<Customer[]>([]);
 const search = ref('');
-const filterDebtRange = ref<'all' | 'high' | 'medium'>('all');
+const sortOrder = ref<'desc' | 'asc'>('desc');
+const filterDate = ref('');
 const loading = ref(true);
 
 const loadDebtors = async () => {
@@ -54,13 +57,21 @@ const filteredDebtors = computed(() => {
     );
   }
 
-  if (filterDebtRange.value === 'high') {
-    list = list.filter(c => c.currentDebt >= 50);
-  } else if (filterDebtRange.value === 'medium') {
-    list = list.filter(c => c.currentDebt < 50);
+  // Filtro por fecha de último fiado
+  if (filterDate.value) {
+    list = list.filter(c => {
+      if (!c.lastSaleDate) return false;
+      const saleDate = new Date(c.lastSaleDate).toISOString().split('T')[0];
+      return saleDate === filterDate.value;
+    });
   }
 
-  return list.sort((a, b) => b.currentDebt - a.currentDebt);
+  return list.sort((a, b) => {
+    if (sortOrder.value === 'asc') {
+      return a.currentDebt - b.currentDebt;
+    }
+    return b.currentDebt - a.currentDebt;
+  });
 });
 
 const totalDebt = computed(() => {
@@ -95,62 +106,66 @@ const handleStatementClick = async (customer: Customer) => {
 
 <template>
   <div class="page-container">
-    <!-- Header -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
-      <div>
-        <div style="font-size: 0.8rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
-          <AlertTriangle :size="15" />
-          Módulo de Cobranzas y Morosidad
-        </div>
-        <h2 style="font-family: var(--font-heading); font-size: 1.85rem; font-weight: 800; margin-top: 4px; color: var(--slate-900);">
-          Ranking de Deudas Pendientes
-        </h2>
-        <p style="font-size: 0.85rem; color: var(--slate-600); margin-top: 2px;">
-          Lista ordenada de mayor a menor deuda con botón rápido para enviar cobranza detallada por WhatsApp
-        </p>
+    <!-- Header with Accumulated Debt Card -->
+    <div class="debts-header-row">
+      <div class="debts-badge-title">
+        <AlertTriangle :size="15" />
+        <span>Módulo de Cobranzas y Morosidad ({{ filteredDebtors.length }} deudores)</span>
       </div>
 
-      <div style="padding: 12px 20px; border-radius: var(--radius-md); background: #fef2f2; border: 1px solid #fecdd3; text-align: right;">
-        <div style="font-size: 0.73rem; text-transform: uppercase; color: #b91c1c; font-weight: 700;">Deuda Acumulada Filtrada</div>
-        <div style="font-family: var(--font-heading); font-size: 1.55rem; font-weight: 800; color: #dc2626;">
-          S/. {{ totalDebt.toFixed(2) }}
-        </div>
+      <div class="debts-total-card">
+        <span class="total-label">Deuda Acumulada Filtrada</span>
+        <span class="total-amount">S/. {{ totalDebt.toFixed(2) }}</span>
       </div>
     </div>
 
-    <!-- Search & Filters Toolbar -->
-    <div style="display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap;">
-      <div class="search-bar" style="flex: 1; min-width: 280px;">
-        <Search class="search-icon" :size="18" />
+    <!-- Toolbar: Search + Date Filter + Sort Order Button in single row -->
+    <div class="debts-toolbar-row">
+      <div class="search-bar debts-search-bar">
+        <Search class="search-icon" :size="16" />
         <input 
           v-model="search"
           type="text" 
           class="search-input" 
           placeholder="Buscar deudor por nombre, celular o DNI..." 
         />
+        <button 
+          v-if="search" 
+          class="btn-clear-search-icon" 
+          title="Borrar búsqueda"
+          @click="search = ''"
+        >
+          ✕
+        </button>
       </div>
 
-      <div style="display: flex; gap: 6px;">
+      <div class="debts-filters-group">
+        <!-- Date Filter -->
+        <div class="debts-date-box" title="Filtrar por fecha de último fiado">
+          <Calendar :size="14" class="debts-date-icon" />
+          <input 
+            v-model="filterDate" 
+            type="date" 
+            class="debts-date-picker"
+          />
+          <button 
+            v-if="filterDate" 
+            class="debts-clear-date-btn" 
+            title="Quitar filtro de fecha"
+            @click="filterDate = ''"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Sort Order Toggle -->
         <button 
-          class="btn btn-sm"
-          :class="filterDebtRange === 'all' ? 'btn-primary' : 'btn-secondary'"
-          @click="filterDebtRange = 'all'"
+          class="btn btn-secondary debts-sort-btn"
+          :title="sortOrder === 'desc' ? 'Orden actual: Mayor a menor. Clic para cambiar a menor a mayor.' : 'Orden actual: Menor a mayor. Clic para cambiar a mayor a menor.'"
+          @click="sortOrder = sortOrder === 'desc' ? 'asc' : 'desc'"
         >
-          Todos los Deudores ({{ customers.filter(c => c.currentDebt > 0).length }})
-        </button>
-        <button 
-          class="btn btn-sm"
-          :class="filterDebtRange === 'high' ? 'btn-primary' : 'btn-secondary'"
-          @click="filterDebtRange = 'high'"
-        >
-          Mayor a S/. 50.00
-        </button>
-        <button 
-          class="btn btn-sm"
-          :class="filterDebtRange === 'medium' ? 'btn-primary' : 'btn-secondary'"
-          @click="filterDebtRange = 'medium'"
-        >
-          Menor a S/. 50.00
+          <ArrowUpDown :size="14" />
+          <span>{{ sortOrder === 'desc' ? 'Mayor a Menor' : 'Menor a Mayor' }}</span>
         </button>
       </div>
     </div>
